@@ -10,6 +10,8 @@ public partial class game : Node2D
 	const int InitialBallSpeed = 80;
 	double ballSpeed = InitialBallSpeed;
 	int padSpeed = 150;
+   int leftScore = 0;
+   int rightScore = 0;
 	public override void _Ready()
 	{
 		screenSize = GetViewportRect().Size;
@@ -21,6 +23,8 @@ public partial class game : Node2D
 	public override void _Process(double delta)
 
 	{
+      var hud = GetNode<hud>("HUD");
+      
 		var time = 0.0;
 		time += delta;
 
@@ -46,6 +50,18 @@ public partial class game : Node2D
 			ballSpeed *= 1.1;
 		}
 
+      if(ballPos.X > screenSize.X)
+      {
+         leftScore++;
+         hud.UpdateScoreLeft(leftScore);
+      }
+
+      if(ballPos.X < 0)
+      {
+         rightScore++;
+         hud.UpdateScoreRight(rightScore);
+      }
+
 		// Check gameover
 		if (ballPos.X < 0 || ballPos.X > screenSize.X)
 		{
@@ -53,6 +69,7 @@ public partial class game : Node2D
 			ballSpeed = InitialBallSpeed;
 			direction = new Vector2(-1, -1);
 		}
+      
 
 		GetNode<Sprite2D>("ball").Position = ballPos;
 

@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://ccu2igcau770r"]
+[gd_scene load_steps=7 format=3 uid="uid://ccu2igcau770r"]
 
 [ext_resource type="Script" path="res://game.cs" id="1_eidnv"]
 [ext_resource type="Texture2D" uid="uid://bwpkek1b5ynl" path="res://Textures/left_pallete.png" id="2_klsjt"]
 [ext_resource type="Texture2D" uid="uid://dprjt7itxunp0" path="res://Textures/right_pallete.png" id="3_pe1pn"]
 [ext_resource type="Texture2D" uid="uid://bofcwvfsofndb" path="res://Textures/ball.png" id="4_nvlse"]
 [ext_resource type="Texture2D" uid="uid://clgywqqmi3rce" path="res://Textures/separator.png" id="5_xjvsa"]
+[ext_resource type="PackedScene" uid="uid://bxpkcefynd8tq" path="res://Scenes/hud.tscn" id="6_hp21v"]
 
 [node name="game" type="Node2D"]
 script = ExtResource("1_eidnv")
@@ -24,3 +25,5 @@ texture = ExtResource("4_nvlse")
 [node name="Separator" type="Sprite2D" parent="."]
 position = Vector2(320, 200)
 texture = ExtResource("5_xjvsa")
+
+[node name="HUD" parent="." instance=ExtResource("6_hp21v")]
