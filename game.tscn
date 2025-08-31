@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://ccu2igcau770r"]
 
-[ext_resource type="Script" path="res://game.cs" id="1_eidnv"]
+[ext_resource type="Script" uid="uid://djpr53kft81hh" path="res://Game.cs" id="1_eidnv"]
 [ext_resource type="Texture2D" uid="uid://bwpkek1b5ynl" path="res://Textures/left_pallete.png" id="2_klsjt"]
 [ext_resource type="Texture2D" uid="uid://dprjt7itxunp0" path="res://Textures/right_pallete.png" id="3_pe1pn"]
 [ext_resource type="Texture2D" uid="uid://bofcwvfsofndb" path="res://Textures/ball.png" id="4_nvlse"]
