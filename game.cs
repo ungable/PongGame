@@ -4,35 +4,116 @@ using System.Text.RegularExpressions;
 
 public partial class Game : Node2D
 {
+   private Menu menu;
    Vector2 screenSize;
    Vector2 padSize;
    Vector2 direction = new Vector2(1, 1);
 
-   const int InitialBallSpeed = 80;
+
+   const int InitialBallSpeed = 2200;
    double ballSpeed = InitialBallSpeed;
    int padSpeed = 150;
    int leftScore = 0;
    int rightScore = 0;
 
+   Vector2 leftStartPos;
+   Vector2 rightStartPos;
+
    private bool firstBounce = true;
    int serveDirX = 0;
+   private bool isPaused = false;
    public override void _Ready()
    {
       screenSize = GetViewportRect().Size;
       padSize = GetNode<Sprite2D>("left").Texture.GetSize();
+      menu = GetNode<Menu>("Menu");
+      menu.ShowMenu(true);
+      menu.SetPanelColor(new Color(0.2f, 0.4f, 0.8f));
+      menu.SetWinner("");
 
+      leftStartPos = GetNode<Sprite2D>("left").Position;
+      rightStartPos = GetNode<Sprite2D>("right").Position;
+
+      SetProcess(false);
+
+      menu.Connect("StartGame", new Callable(this, nameof(OnStartGame)));
+      menu.Connect("RestartGame", new Callable(this, nameof(OnRestartGame)));
+      menu.Connect("ContinueGame", new Callable(this, nameof(OnContinueGame)));
+
+   }
+
+   private void OnStartGame()
+   {
+      ResetGame();
+      menu.ShowStartMenu();
+      menu.SetPanelColor(new Color(0.2f, 0.4f, 0.8f));
+      menu.ShowMenu(false);
       SetProcess(true);
+   }
+
+   private void OnRestartGame()
+   {
+      ResetGame();
+      menu.ShowPauseMenu();
+      menu.ShowMenu(false);
+      SetProcess(true);
+   }
+
+   private void OnContinueGame()
+   {
+      menu.ShowMenu(false);
+      SetProcess(true);
+
+   }
+
+   private void ResetGame()
+   {
+      leftScore = 0;
+      rightScore = 0;
+      ballSpeed = InitialBallSpeed;
+      firstBounce = true;
+      GetNode<Sprite2D>("ball").Position = screenSize / 2;
+      direction = new Vector2(1, 0);
+      menu.SetWinner("");
+
+      //Сброс позиций ракеток
+      GetNode<Sprite2D>("left").Position = leftStartPos;
+      GetNode<Sprite2D>("right").Position = rightStartPos;
+
+      // Сброс очков
+      var hud = GetNode<hud>("HUD");
+      hud.UpdateScoreLeft(leftScore);
+      hud.UpdateScoreRight(rightScore);
+
    }
 
    public override void _Process(double delta)
 
    {
-
       var hud = GetNode<hud>("HUD");
 
       var ballPos = GetNode<Sprite2D>("ball").Position;
       var leftRect = new Rect2(GetNode<Sprite2D>("left").Position - padSize / 2, padSize);
       var rightRect = new Rect2(GetNode<Sprite2D>("right").Position - padSize / 2, padSize);
+
+      if (Input.IsActionJustPressed("ui_cancel"))
+      {
+         if (menu.Visible && menu.IsPauseMenuActive)
+         {
+            menu.ShowMenu(false);
+            isPaused = false;
+         }
+         else
+         {
+            menu.ShowPauseMenu();
+            menu.SetPanelColor(new Color(1.0f, 0.6f, 0.2f));
+            menu.ShowMenu(true);
+            isPaused = true;
+         }
+      }
+
+      if (isPaused)
+         return;
 
       // Integrate new ball position
       ballPos += direction * (float)ballSpeed * (float)delta;
@@ -46,10 +127,6 @@ public partial class Game : Node2D
       // Flip, change direction and increace speed when touching pads
       if ((leftRect.HasPoint(ballPos) && direction.X < 0) || (rightRect.HasPoint(ballPos) && direction.X > 0))
       {
-         GD.Print("Отскок от ракетки");
-         GD.Print($"ballSpeed: {ballSpeed}");
-         GD.Print($"direction: {direction}");
-
          bool hitLeft = leftRect.HasPoint(ballPos) && direction.X < 0;
          direction.X = -direction.X;
 
@@ -108,6 +185,7 @@ public partial class Game : Node2D
          float randY = (float)GD.RandRange(-1.0, 1.0);
          direction = new Vector2(serveDirX, randY).Normalized();
          firstBounce = true;
+         serveDirX = 0;
       }
 
 
@@ -140,5 +218,15 @@ public partial class Game : Node2D
       }
 
       GetNode<Sprite2D>("right").Position = rightPos;
+
+      if (leftScore >= 10 || rightScore >= 10)
+      {
+         string winner = leftScore >= 10 ? "Left Player Wins!" : "Right Player Wins!";
+         menu.SetWinner(winner);
+         menu.ShowStartMenu();
+         menu.SetPanelColor(new Color(0.2f, 0.4f, 0.8f));
+         menu.ShowMenu(true);
+         SetProcess(false);
+      }
    }
 }
