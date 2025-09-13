@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Text.RegularExpressions;
 
 public partial class Game : Node2D
 {
@@ -12,6 +13,9 @@ public partial class Game : Node2D
    int padSpeed = 150;
    int leftScore = 0;
    int rightScore = 0;
+
+   private bool firstBounce = true;
+   int serveDirX = 0;
    public override void _Ready()
    {
       screenSize = GetViewportRect().Size;
@@ -23,10 +27,8 @@ public partial class Game : Node2D
    public override void _Process(double delta)
 
    {
-      var hud = GetNode<hud>("HUD");
 
-      var time = 0.0;
-      time += delta;
+      var hud = GetNode<hud>("HUD");
 
       var ballPos = GetNode<Sprite2D>("ball").Position;
       var leftRect = new Rect2(GetNode<Sprite2D>("left").Position - padSize / 2, padSize);
@@ -36,7 +38,7 @@ public partial class Game : Node2D
       ballPos += direction * (float)ballSpeed * (float)delta;
 
       // Flip when touching roof	or floor
-      if ((ballPos.Y < 0 && direction.Y < 0) || (ballPos.Y > screenSize.Y && direction.Y > 0))
+      if (ballPos.Y < 0 || ballPos.Y > screenSize.Y)
       {
          direction.Y = -direction.Y;
       }
@@ -44,22 +46,58 @@ public partial class Game : Node2D
       // Flip, change direction and increace speed when touching pads
       if ((leftRect.HasPoint(ballPos) && direction.X < 0) || (rightRect.HasPoint(ballPos) && direction.X > 0))
       {
+         GD.Print("Отскок от ракетки");
+         GD.Print($"ballSpeed: {ballSpeed}");
+         GD.Print($"direction: {direction}");
+
+         bool hitLeft = leftRect.HasPoint(ballPos) && direction.X < 0;
          direction.X = -direction.X;
-         direction.Y = GD.Randf() * 2 - 1;
+
+         Sprite2D pad = hitLeft ? GetNode<Sprite2D>("left") : GetNode<Sprite2D>("right");
+         float padCenterY = pad.Position.Y;
+         float padHeight = padSize.Y;
+
+         float relativeY = (ballPos.Y - padCenterY) / (padHeight / 2); // -1 (верх), 0 (центр), 1 (низ)
+         relativeY = Mathf.Clamp(relativeY, -1, 1);
+
+         if (Mathf.Abs(relativeY) < 0.2)
+         {
+            direction.Y = 0;
+         }
+         else if (relativeY < 0)
+         {
+            direction.Y = -1;
+         }
+         else
+         {
+            direction.Y = 1;
+         }
+
+         // direction.Y = relativeY;
          direction = direction.Normalized();
          ballSpeed *= 1.1;
+
+         if (firstBounce)
+         {
+            ballSpeed *= 1.2;
+            firstBounce = false;
+         }
+
+
       }
 
       if (ballPos.X > screenSize.X)
       {
          leftScore++;
          hud.UpdateScoreLeft(leftScore);
+         serveDirX = -1;
       }
 
-      if (ballPos.X < 0)
+      else if (ballPos.X < 0)
       {
          rightScore++;
          hud.UpdateScoreRight(rightScore);
+         serveDirX = 1;
       }
 
       // Check gameover
@@ -67,7 +105,9 @@ public partial class Game : Node2D
       {
          ballPos = screenSize / 2;
          ballSpeed = InitialBallSpeed;
-         direction = new Vector2(-1, -1);
+         float randY = (float)GD.RandRange(-1.0, 1.0);
+         direction = new Vector2(serveDirX, randY).Normalized();
+         firstBounce = true;
       }
 
 
@@ -76,11 +116,11 @@ public partial class Game : Node2D
       // Move left pad
       var leftPos = GetNode<Sprite2D>("left").Position;
 
-      if (leftPos.Y > 0 && Input.IsActionPressed("leftMoveUp"))
+      if (leftPos.Y > padSize.Y / 2 && Input.IsActionPressed("leftMoveUp"))
       {
          leftPos.Y += -padSpeed * (float)delta;
       }
-      if (leftPos.Y < screenSize.Y && Input.IsActionPressed("leftMoveDown"))
+      if (leftPos.Y < screenSize.Y - padSize.Y / 2 && Input.IsActionPressed("leftMoveDown"))
       {
          leftPos.Y += padSpeed * (float)delta;
       }
@@ -90,11 +130,11 @@ public partial class Game : Node2D
       // Move right pad
       var rightPos = GetNode<Sprite2D>("right").Position;
 
-      if (rightPos.Y > 0 && Input.IsActionPressed("rightMoveUp"))
+      if (rightPos.Y > padSize.Y / 2 && Input.IsActionPressed("rightMoveUp"))
       {
          rightPos.Y += -padSpeed * (float)delta;
       }
-      if (rightPos.Y < screenSize.Y && Input.IsActionPressed("rightMoveDown"))
+      if (rightPos.Y < screenSize.Y - padSize.Y / 2 && Input.IsActionPressed("rightMoveDown"))
       {
          rightPos.Y += padSpeed * (float)delta;
       }
